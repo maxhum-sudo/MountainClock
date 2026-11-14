@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Display Time</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌲%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,640&family=Outfit:wght@340;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --sky-top: #3f86c8;
+    --sky-mid: #8ec8ee;
+    --sky-bot: #f3e6cf;
+    --sun-x: 32%;
+    --sun-y: 30%;
+    --moon-x: 70%;
+    --moon-y: 24%;
+    --glow: rgba(255, 228, 186, 0.45);
+    --moon-glow: rgba(210, 220, 255, 0);
+    --ridge-far: #c5d7e4;
+    --ridge-mid: #8aa4b6;
+    --ridge-near: #5d8460;
+    --hill: #84943c;
+    --fg: #627830;
+    --distant: #6d8450;
+    --water: #2f93a8;
+    --water-deep: #176e80;
+    --water-lite: #9ad4e0;
+    --fog: rgba(236, 244, 248, 0.4);
+    --sun-core: #fff4c8;
+    --sun-edge: #ffd27a;
+    --sun-halo: rgba(255, 214, 140, 0.55);
+    --ink: #f7f3ea;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--sky-bot);
+    color: var(--ink);
+  }
+
+  #scene {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  #sky {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(circle at var(--sun-x) var(--sun-y), var(--glow) 0%, transparent 28%),
+      radial-gradient(circle at var(--moon-x) var(--moon-y), var(--moon-glow) 0%, transparent 16%),
+      linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 46%, var(--sky-bot) 100%);
+  }
+
+  #stars { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: #fff;
+    opacity: var(--o, 0.8);
+    animation: twinkle ease-in-out infinite;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.7);
+  }
+  .star.bright { box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.85); }
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--o, 0.8); }
+    50% { opacity: calc(var(--o, 0.8) * 0.2); }
+  }
+
+  #sun, #moon {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+  #sun { width: 120px; height: 120px; }
+  #sun .disc {
+    position: absolute;
+    inset: 24%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 36%, #fff 0%, var(--sun-core) 38%, var(--sun-edge) 100%);
+    box-shadow:
+      0 0 18px 6px var(--sun-halo),
+      0 0 64px 22px var(--sun-halo);
+  }
+  #moon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 32% 32%, #fff 0%, #f4f1e4 46%, #d9d3c0 100%);
+    box-shadow:
+      0 0 18px 6px rgba(214, 224, 255, 0.45),
+      inset -7px -5px 0 rgba(168, 164, 140, 0.28);
+  }
+  #moon::before, #moon::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(150, 156, 138, 0.35);
+  }
+  #moon::before { width: 11px; height: 11px; top: 12px; left: 11px; }
+  #moon::after {
+    width: 7px; height: 7px; top: 28px; left: 27px;
+    box-shadow: -14px -8px 0 1px rgba(150, 156, 138, 0.28);
+  }
+
+  #clouds { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .cloud {
+    position: absolute;
+    left: 0;
+    height: 34px;
+    border-radius: 40px;
+    background: rgba(255, 255, 255, 0.92);
+    animation: drift linear infinite;
+  }
+  .cloud::before, .cloud::after {
+    content: "";
+    position: absolute;
+    background: inherit;
+    border-radius: 50%;
+  }
+  .cloud::before { width: 48px; height: 48px; left: 16px; top: -26px; }
+  .cloud::after { width: 64px; height: 42px; right: 12px; top: -16px; }
+  .c1 { width: 110px; top: 9%; animation-duration: 108s; animation-delay: -18s; }
+  .c2 { width: 150px; top: 16%; animation-duration: 142s; animation-delay: -80s; }
+  .c3 { width: 90px; top: 6%; animation-duration: 96s; animation-delay: -46s; }
+  .c4 { width: 130px; top: 21%; animation-duration: 160s; animation-delay: -120s; }
+  .c5 { width: 100px; top: 13%; animation-duration: 124s; animation-delay: -30s; }
+  @keyframes drift {
+    from { transform: translateX(108vw); }
+    to { transform: translateX(-32vw); }
+  }
+  body.dawn .cloud { background: #ffd2cc; }
+  body.golden .cloud, body.dusk .cloud { background: #ffe0c2; }
+  body.night .cloud { background: #c9d2ea; }
+
+  #mountains {
+    position: absolute;
+    left: -2%;
+    width: 104%;
+    top: auto;
+    bottom: 34%;
+    height: clamp(180px, 36vw, 390px);
+    z-index: 3;
+    pointer-events: none;
+  }
+  #mountains .snow { fill: rgba(255, 255, 255, 0.88); }
+
+  #fog {
+    position: absolute;
+    left: 0; right: 0;
+    top: 46%;
+    height: 16%;
+    z-index: 4;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, var(--fog) 48%, transparent);
+  }
+
+  #hill {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 30%;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  #distant {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 18%;
+    z-index: 6;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  #trees { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+  .tree {
+    position: absolute;
+    transform-origin: 50% 100%;
+    animation: pop 0.9s cubic-bezier(0.16, 1.25, 0.32, 1) both;
+    filter: drop-shadow(0 8px 6px rgba(0, 0, 0, 0.13));
+  }
+  .tree-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    transform-origin: 50% 100%;
+    animation: sway var(--sway, 5.5s) ease-in-out infinite;
+    animation-delay: var(--sway-delay, 0s);
+  }
+  @keyframes pop {
+    0% { opacity: 0; transform: translate(-50%, -68%) scale(0.12); }
+    100% { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+  }
+  @keyframes sway {
+    0%, 100% { transform: rotate(calc(var(--lean, 0deg) - 1.25deg)); }
+    50% { transform: rotate(calc(var(--lean, 0deg) + 1.25deg)); }
+  }
+  .tree.bye { animation: bye 0.55s ease forwards; }
+  @keyframes bye {
+    to { opacity: 0; transform: translate(-50%, -55%) scale(0.16); }
+  }
+  body.night .tree {
+    filter: brightness(0.58) saturate(0.7) drop-shadow(0 0 7px rgba(176, 198, 255, 0.22));
+  }
+  body.dusk .tree { filter: brightness(0.72) saturate(1.08) drop-shadow(-6px 0 0 rgba(255, 140, 90, 0.18)); }
+  body.dawn .tree { filter: brightness(0.94) saturate(1.06); }
+  body.golden .tree {
+    filter: saturate(1.2) brightness(1.03) drop-shadow(-7px 1px 0 rgba(255, 150, 60, 0.22));
+  }
+
+  #stream {
+    position: absolute;
+    left: 0; right: 0;
+    top: 72%;
+    height: 22%;
+    z-index: 8;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--water-lite) 0%, var(--water) 38%, var(--water-deep) 100%);
+  }
+  .wave {
+    position: absolute;
+    left: -10%;
+    width: 160%;
+    height: 34px;
+    top: -16px;
+    pointer-events: none;
+  }
+  .wave-back { animation: slide 10s linear infinite; }
+  .wave-front {
+    top: -8px;
+    height: 22px;
+    opacity: 0.4;
+    animation: slide 6.5s linear infinite reverse;
+  }
+  @keyframes slide { to { transform: translateX(-18%); } }
+  .current {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      -12deg,
+      transparent 0 34px,
+      rgba(255, 255, 255, 0.055) 34px 36px
+    );
+    animation: flow 7s linear infinite;
+  }
+  @keyframes flow { to { transform: translateX(-70px); } }
+  #glint {
+    position: absolute;
+    top: 0;
+    bottom: 28%;
+    width: 64px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0));
+    filter: blur(7px);
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  #schools {
+    position: absolute;
+    left: 0; right: 0;
+    top: 6%;
+    bottom: 40%;
+    z-index: 2;
+  }
+  .rock {
+    position: absolute;
+    bottom: 22%;
+    z-index: 1;
+    background: linear-gradient(180deg, #8d847c, #5c564f);
+    border-radius: 45% 42% 16px 16px;
+    opacity: 0.5;
+  }
+  .school {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 6px 8px 8px;
+    border-radius: 16px;
+    background: radial-gradient(ellipse at 50% 58%, color-mix(in srgb, currentColor 30%, transparent), transparent 74%);
+  }
+  .school::after {
+    content: "";
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    bottom: 2px;
+    height: 3px;
+    border-radius: 3px;
+    background: currentColor;
+    opacity: 0.75;
+  }
+  .school-inner.flip { transform: scaleX(-1); }
+  .fish-row { display: flex; gap: 3px; }
+  .fish-row + .fish-row { margin-top: 2px; padding-left: 7px; }
+  .fish {
+    width: var(--fish, 22px);
+    height: calc(var(--fish, 22px) * 0.56);
+    flex: 0 0 auto;
+    animation: wag 0.72s ease-in-out infinite;
+    transform-origin: 75% 50%;
+  }
+  .fish-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  body.night .fish-svg {
+    filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 7px currentColor);
+  }
+  @keyframes wag {
+    0%, 100% { transform: rotate(-8deg) translateY(0); }
+    50% { transform: rotate(9deg) translateY(-1.5px); }
+  }
+
+  #foreground {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 0;
+    height: 15%;
+    z-index: 9;
+    pointer-events: none;
+  }
+  #tufts {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 0;
+    height: 16%;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .tuft {
+    position: absolute;
+    bottom: 8px;
+    width: 12px;
+    height: var(--h, 20px);
+    transform: rotate(var(--lean, 0deg));
+    transform-origin: 50% 100%;
+    background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--fg) 35%, #d5eda4) 40%, var(--fg) 100%);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    opacity: 0.9;
+  }
+
+  #leaves { position: absolute; inset: 0; z-index: 11; pointer-events: none; }
+  .leaf {
+    position: absolute;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18));
+  }
+  .leaf svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+  #vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, 0.28) 100%);
+  }
+
+  #hud {
+    position: absolute;
+    z-index: 13;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 16px;
+    align-items: center;
+    padding: 10px 16px 11px;
+    border-radius: 18px;
+    color: var(--ink);
+    background: rgba(14, 18, 26, 0.46);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(16px) saturate(1.25);
+    -webkit-backdrop-filter: blur(16px) saturate(1.25);
+    user-select: text;
+  }
+  .kicker {
+    margin: 0;
+    font-family: Outfit, "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.72;
+  }
+  #date {
+    margin: 1px 0 0;
+    font-family: Outfit, "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 340;
+    opacity: 0.88;
+  }
+  #time {
+    margin: 0;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-family: Fraunces, "Iowan Old Style", Palatino, Georgia, serif;
+    font-weight: 560;
+    font-size: clamp(34px, 5vw, 48px);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+    align-self: center;
+  }
+  #legend {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+  #legend li {
+    position: relative;
+    margin: 0;
+    padding-left: 16px;
+    font-family: Outfit, "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  #legend li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.48em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  #hour-line::before { background: #e07a3d; }
+  #minute-line::before { background: #3dbebf; }
+  #second-line::before { background: #ee9b00; }
+  .key {
+    margin: 10px 0 0;
+    font-family: Outfit, "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 11.5px;
+    line-height: 1.45;
+    opacity: 0.74;
+  }
+
+  @media (max-width: 640px) {
+    #hud { padding: 10px 12px; }
+    #legend li { font-size: 13px; }
+    .key { display: none; }
+  }
+</style>
+</head>
+<body>
+<main id="scene" aria-label="Landscape clock. Trees show the hour, schools of ten fish show the minutes, and falling leaves show the seconds.">
+  <div id="sky"></div>
+  <div id="stars" aria-hidden="true"></div>
+  <div id="sun" aria-hidden="true"><div class="disc"></div></div>
+  <div id="moon" aria-hidden="true"></div>
+  <div id="clouds" aria-hidden="true">
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+    <div class="cloud c4"></div>
+    <div class="cloud c5"></div>
+  </div>
+  <svg id="mountains" viewBox="0 0 1440 460" preserveAspectRatio="none" aria-hidden="true">
+    <polygon fill="var(--ridge-far)" points="0,340 0,248 86,272 148,186 214,228 292,104 368,186 446,148 524,214 602,96 688,176 778,52 868,166 962,128 1052,198 1138,74 1232,168 1324,118 1440,158 1440,360" />
+    <polygon class="snow" points="292,104 274,134 310,132" />
+    <polygon class="snow" points="602,96 584,128 622,126" />
+    <polygon class="snow" points="778,52 756,92 802,88" />
+    <polygon class="snow" points="1138,74 1118,108 1160,106" />
+    <polygon fill="var(--ridge-mid)" points="0,400 0,300 104,318 196,228 286,286 372,196 478,274 572,188 678,262 792,178 908,252 1022,168 1132,246 1244,190 1352,276 1440,224 1440,420" />
+    <polygon fill="var(--ridge-near)" points="0,460 0,348 150,368 310,312 490,356 690,304 880,352 1100,314 1290,360 1440,322 1440,460" />
+  </svg>
+  <div id="fog" aria-hidden="true"></div>
+  <svg id="hill" viewBox="0 0 1440 420" preserveAspectRatio="none" aria-hidden="true">
+    <path fill="var(--hill)" d="M0,96 C170,48 300,118 480,70 C700,12 860,108 1080,52 C1260,14 1360,78 1440,40 L1440,420 L0,420 Z" />
+  </svg>
+  <svg id="distant" viewBox="0 0 1440 180" preserveAspectRatio="none" aria-hidden="true"></svg>
+  <div id="trees"></div>
+  <div id="stream">
+    <svg class="wave wave-back" viewBox="0 0 1600 40" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="var(--water-lite)" d="M0,22 Q40,6 80,22 T160,22 T240,22 T320,22 T400,22 T480,22 T560,22 T640,22 T720,22 T800,22 T880,22 T960,22 T1040,22 T1120,22 T1200,22 T1280,22 T1360,22 T1440,22 T1520,22 T1600,22 V40 H0 Z" />
+    </svg>
+    <svg class="wave wave-front" viewBox="0 0 1600 40" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#fff" d="M0,24 Q50,10 100,24 T200,24 T300,24 T400,24 T500,24 T600,24 T700,24 T800,24 T900,24 T1000,24 T1100,24 T1200,24 T1300,24 T1400,24 T1500,24 T1600,24 V40 H0 Z" />
+    </svg>
+    <div class="current"></div>
+    <div id="glint"></div>
+    <div class="rock" style="left:6%;width:34px;height:16px"></div>
+    <div class="rock" style="left:18%;width:22px;height:12px;bottom:30%"></div>
+    <div class="rock" style="right:7%;width:40px;height:18px"></div>
+    <div class="rock" style="right:16%;width:18px;height:11px;bottom:28%"></div>
+    <div id="schools"></div>
+  </div>
+  <svg id="foreground" viewBox="0 0 1440 200" preserveAspectRatio="none" aria-hidden="true">
+    <path fill="var(--fg)" d="M0,78 C140,46 260,96 420,60 C620,18 780,92 980,50 C1160,16 1300,78 1440,42 L1440,200 L0,200 Z" />
+  </svg>
+  <div id="tufts" aria-hidden="true"></div>
+  <div id="leaves"></div>
+  <div id="vignette" aria-hidden="true"></div>
+  <aside id="hud">
+    <p class="kicker">Display Time</p>
+    <p id="date"></p>
+    <p id="time">--:--:--</p>
+    <ul id="legend">
+      <li id="hour-line"></li>
+      <li id="minute-line"></li>
+      <li id="second-line"></li>
+    </ul>
+    <p class="key">Trees mark the hour, midnight holds all 24. Fish swim in schools of ten. A new leaf falls each second.</p>
+  </aside>
+</main>
+<script>
+(function () {
+  "use strict";
+
+  const scene = document.getElementById("scene");
+  const starsEl = document.getElementById("stars");
+  const cloudsEl = document.getElementById("clouds");
+  const sunEl = document.getElementById("sun");
+  const moonEl = document.getElementById("moon");
+  const glintEl = document.getElementById("glint");
+  const treesRoot = document.getElementById("trees");
+  const schoolsRoot = document.getElementById("schools");
+  const leavesRoot = document.getElementById("leaves");
+  const timeEl = document.getElementById("time");
+  const dateEl = document.getElementById("date");
+  const hourLine = document.getElementById("hour-line");
+  const minuteLine = document.getElementById("minute-line");
+  const secondLine = document.getElementById("second-line");
+
+  const SUNRISE = 6.6;
+  const SUNSET = 17.15;
+
+  const SKY = [
+    { h: 0,    top: "#07081a", mid: "#12182e", bot: "#1c2838", ridgeF: "#3a4460", ridgeM: "#2a3348", ridgeN: "#1e2836", hill: "#24352c", fg: "#1a2820", distant: "#2c4034", water: "#0e4552", glow: "#bcd0ff", glowA: 0.0,  star: 1,    cloud: 0.16 },
+    { h: 4.7,  top: "#161228", mid: "#3a2048", bot: "#6a3a52", ridgeF: "#4e3c5c", ridgeM: "#3a2c48", ridgeN: "#2a2438", hill: "#322838", fg: "#221c28", distant: "#3c3044", water: "#3a3c58", glow: "#ffb090", glowA: 0.12, star: 0.9,  cloud: 0.26 },
+    { h: 6.35, top: "#3c5088", mid: "#f08c78", bot: "#ffd0a6", ridgeF: "#c89088", ridgeM: "#8d5e68", ridgeN: "#5e4852", hill: "#6d7048", fg: "#465034", distant: "#6a5844", water: "#d07868", glow: "#ffb078", glowA: 0.7,  star: 0.12, cloud: 0.55 },
+    { h: 8.2,  top: "#3f86c8", mid: "#8ec8ee", bot: "#f6e4cc", ridgeF: "#b7cddd", ridgeM: "#7f97a8", ridgeN: "#5f7d58", hill: "#84943c", fg: "#627830", distant: "#6e8448", water: "#2f93a8", glow: "#ffe0b0", glowA: 0.48, star: 0,    cloud: 0.84 },
+    { h: 12.3, top: "#1d6eb8", mid: "#4eace6", bot: "#d7f0ff", ridgeF: "#c5d7e4", ridgeM: "#8aa4b6", ridgeN: "#5d8460", hill: "#8ea844", fg: "#6c8632", distant: "#708848", water: "#1f8eb0", glow: "#fff4c8", glowA: 0.32, star: 0,    cloud: 0.92 },
+    { h: 15.7, top: "#2c74b0", mid: "#8ac4e2", bot: "#ffe3c0", ridgeF: "#d4c2ae", ridgeM: "#a88870", ridgeN: "#6e6844", hill: "#a48a3c", fg: "#7c6a30", distant: "#7e783c", water: "#3a96a6", glow: "#ffd09a", glowA: 0.52, star: 0,    cloud: 0.74 },
+    { h: 17.25,top: "#3e5690", mid: "#f09a62", bot: "#ffd09a", ridgeF: "#e0a080", ridgeM: "#b86a4e", ridgeN: "#6e4038", hill: "#8a6234", fg: "#5c4028", distant: "#7a5034", water: "#e07858", glow: "#ff9650", glowA: 0.72, star: 0.04, cloud: 0.68 },
+    { h: 18.55,top: "#241848", mid: "#c44b68", bot: "#ff9960", ridgeF: "#6a3a58", ridgeM: "#4a2848", ridgeN: "#2e1c30", hill: "#4a3028", fg: "#2c1c18", distant: "#4a2830", water: "#a84858", glow: "#ff7848", glowA: 0.4,  star: 0.42, cloud: 0.38 },
+    { h: 20.3, top: "#0c1024", mid: "#261838", bot: "#3a2848", ridgeF: "#2c3450", ridgeM: "#1e263c", ridgeN: "#161c2a", hill: "#1e2822", fg: "#141c16", distant: "#24302a", water: "#143e4c", glow: "#b4c8ff", glowA: 0.05, star: 0.92, cloud: 0.18 },
+    { h: 24,   top: "#07081a", mid: "#12182e", bot: "#1c2838", ridgeF: "#3a4460", ridgeM: "#2a3348", ridgeN: "#1e2836", hill: "#24352c", fg: "#1a2820", distant: "#2c4034", water: "#0e4552", glow: "#bcd0ff", glowA: 0.0,  star: 1,    cloud: 0.16 }
+  ];
+
+  const PALETTES = [
+    ["#d4521a", "#f0a202", "#8f2d14", "#e07a3d"],
+    ["#b8392f", "#e6b325", "#6b8f3c", "#d4662f"],
+    ["#9a3412", "#ea580c", "#ca8a04", "#3f6212"],
+    ["#7f1d1d", "#d97706", "#65a30d", "#fbbf24"],
+    ["#c2410c", "#f59e0b", "#b45309", "#4d7c0f"],
+    ["#9f1239", "#fb7185", "#eab308", "#166534"]
+  ];
+
+  const SCHOOL_COLORS = ["#f4a259", "#ff6b6b", "#2ec4b6", "#ffd166", "#4cc9f0", "#f72585"];
+
+  const FISH = '<svg class="fish-svg" viewBox="0 0 64 36" aria-hidden="true"><path d="M50 18c0-6.5-9-11-20-9.5C22 9.2 16 13 14.5 18 16 23 22 26.8 30 27.5 41 29 50 24.5 50 18z" fill="currentColor" stroke="rgba(0,0,0,0.38)" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 18 L3 8.5 L8 18 L3 27.5 Z" fill="currentColor" stroke="rgba(0,0,0,0.38)" stroke-width="1.3" stroke-linejoin="round"/><path d="M28 11c3.5-5 9-3.2 7.2 1.2" fill="currentColor"/><path d="M20 20c7 5 16 3.4 22-1.2-2 4.2-10 7-19 5.2-3.2-.6-5-2.4-3-4z" fill="rgba(255,255,255,0.3)"/><circle cx="40" cy="16.5" r="1.8" fill="#1a120c"/><circle cx="40.6" cy="16" r="0.65" fill="#fff"/></svg>';
+
+  const LEAF_SVG = [
+    '<svg viewBox="0 0 24 36" aria-hidden="true"><path fill="currentColor" d="M12 1C16.5 8 22 13 22 20.5 22 28 17 33.2 12 35 7 33.2 2 28 2 20.5 2 13 7.5 8 12 1z"/><path d="M12 8.5 V28" stroke="rgba(0,0,0,0.28)" stroke-width="1" fill="none"/></svg>',
+    '<svg viewBox="0 0 30 32" aria-hidden="true"><path fill="currentColor" d="M15 2c2 5 9 7.5 12 13-4 2-6.2 7-6.2 13.2C18.5 22 16.5 20 15 20s-3.5 2-5.8 8.2C9.2 22 7 17 3 15 6 9.5 13 7 15 2z"/></svg>',
+    '<svg viewBox="0 0 22 32" aria-hidden="true"><path fill="currentColor" d="M11 1.5c5.2 4 9.5 9.5 8.6 16.2C17.2 24 14 29 11 31 8 29 4.8 24 2.4 17.7 1.5 11 5.8 5.5 11 1.5z"/><path d="M11 7c-.6 5-.4 11 .2 18" stroke="rgba(255,255,255,0.35)" stroke-width="1" fill="none"/></svg>'
+  ];
+
+  const TREE_SVG = [
+    '<svg class="tree-svg" viewBox="0 0 130 150" aria-hidden="true"><ellipse cx="65" cy="145" rx="26" ry="4.5" fill="rgba(0,0,0,0.2)"/><path d="M59 146c0-16 2-34 1-48 5-2 9-2 13 0 0 14 2 32 1 48z" fill="#694225"/><path d="M66 96c-2-10-8-12-14-8" stroke="#694225" stroke-width="2.4" fill="none" stroke-linecap="round"/><path fill="var(--c1)" d="M66 20c20 2 38 16 40 36 4 16-2 30-14 38-2 12-16 20-30 16-18-2-32-16-34-34-4-16 2-32 16-42 6-8 14-16 22-14z"/><circle cx="48" cy="62" r="16" fill="var(--c2)"/><circle cx="88" cy="68" r="15" fill="var(--c3)"/><circle cx="64" cy="40" r="13" fill="var(--c4)"/><circle cx="74" cy="58" r="7" fill="rgba(255,255,255,0.14)"/></svg>',
+    '<svg class="tree-svg" viewBox="0 0 116 156" aria-hidden="true"><ellipse cx="58" cy="151" rx="22" ry="4.2" fill="rgba(0,0,0,0.2)"/><path d="M53 152c0-18 2-40 1-56 4-2 8-2 11 0 0 16 1 40 1 56z" fill="#5d3b22"/><path fill="var(--c2)" d="M58 16c16 0 30 12 32 28 3 14-4 26-14 32 2 8-2 18-12 24-14 6-28 2-36-10-10-8-16-22-12-36 4-16 18-30 42-38z"/><circle cx="42" cy="58" r="14" fill="var(--c1)"/><circle cx="76" cy="64" r="13" fill="var(--c3)"/><circle cx="58" cy="38" r="12" fill="var(--c4)"/><path d="M58 48c8 6 14 16 12 28" stroke="rgba(255,255,255,0.16)" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+    '<svg class="tree-svg" viewBox="0 0 148 148" aria-hidden="true"><ellipse cx="74" cy="143" rx="30" ry="4.5" fill="rgba(0,0,0,0.2)"/><path d="M68 144c-1-14 1-30 0-42 6-2 10-2 14 0 0 12 2 28 1 42z" fill="#6a4124"/><path fill="var(--c3)" d="M74 26c22 1 42 14 46 34 4 18-6 34-22 40 0 10-8 20-22 22-16 2-32-8-38-22-12-6-24-20-22-38 2-20 24-38 58-36z"/><circle cx="52" cy="70" r="18" fill="var(--c2)"/><circle cx="98" cy="72" r="16" fill="var(--c1)"/><circle cx="74" cy="46" r="15" fill="var(--c4)"/><circle cx="64" cy="64" r="8" fill="rgba(255,255,255,0.13)"/></svg>'
+  ];
+  const TREE_RATIO = [150 / 130, 156 / 116, 148 / 148];
+
+  const treeEls = new Map();
+  const leaves = [];
+  let schoolState = [];
+  let shownTrees = -1;
+  let shownMinute = -1;
+  let leafSerial = 0;
+  let lastFrame = performance.now();
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function mix(a, b, t) {
+    const A = hexToRgb(a);
+    const B = hexToRgb(b);
+    return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
+  }
+  function rgba(hex, alpha) {
+    const [r, g, b] = hexToRgb(hex);
+    return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+  }
+
+  function treeCountFor(hour) {
+    return hour === 0 ? 24 : hour;
+  }
+
+  function forcedParts() {
+    let raw = null;
+    if (typeof window.__displayTime === "string") raw = window.__displayTime;
+    else {
+      const match = /^#(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(location.hash);
+      if (match) raw = match[1] + ":" + match[2] + ":" + (match[3] || "0");
+    }
+    if (!raw) return null;
+    const parts = raw.split(":").map(function (n) { return parseInt(n, 10) || 0; });
+    return [clamp(parts[0], 0, 23), clamp(parts[1], 0, 59), clamp(parts[2] || 0, 0, 59)];
+  }
+
+  function getNow() {
+    const forced = forcedParts();
+    if (!forced) return new Date();
+    const d = new Date();
+    d.setHours(forced[0], forced[1], forced[2], 0);
+    return d;
+  }
+
+  function sampleSky(hourFloat) {
+    let i = 0;
+    while (i < SKY.length - 2 && hourFloat >= SKY[i + 1].h) i++;
+    const a = SKY[i];
+    const b = SKY[i + 1];
+    const t = clamp((hourFloat - a.h) / (b.h - a.h), 0, 1);
+    const keys = ["top", "mid", "bot", "ridgeF", "ridgeM", "ridgeN", "hill", "fg", "distant", "water", "glow"];
+    const out = {};
+    keys.forEach(function (k) { out[k] = mix(a[k], b[k], t); });
+    out.glowA = lerp(a.glowA, b.glowA, t);
+    out.star = lerp(a.star, b.star, t);
+    out.cloud = lerp(a.cloud, b.cloud, t);
+    return out;
+  }
+
+  function sunArc(hourFloat) {
+    const p = (hourFloat - SUNRISE) / (SUNSET - SUNRISE);
+    if (p <= 0 || p >= 1) {
+      return { x: p <= 0 ? 8 : 92, y: 84, elevation: -0.2, opacity: 0 };
+    }
+    const elevation = Math.sin(p * Math.PI);
+    return {
+      x: 9 + p * 82,
+      y: 68 - elevation * 50,
+      elevation: elevation,
+      opacity: Math.min(1, p * 9, (1 - p) * 9)
+    };
+  }
+
+  function moonArc(hourFloat) {
+    let h = hourFloat;
+    if (h < SUNRISE) h += 24;
+    const p = (h - SUNSET) / (SUNRISE + 24 - SUNSET);
+    if (p <= 0 || p >= 1) return { x: 50, y: 80, opacity: 0 };
+    const elevation = Math.sin(p * Math.PI);
+    return {
+      x: 14 + p * 72,
+      y: 80 - elevation * 54,
+      opacity: Math.min(1, p * 5, (1 - p) * 5) * 0.95
+    };
+  }
+
+  function phaseFor(h) {
+    if (h < 5 || h >= 20.3) return "night";
+    if (h < 7.5) return "dawn";
+    if (h < 16) return "day";
+    if (h < 18.15) return "golden";
+    return "dusk";
+  }
+
+  function applySky(hourFloat) {
+    const sky = sampleSky(hourFloat);
+    const root = document.documentElement;
+    const set = function (k, v) { root.style.setProperty(k, v); };
+    set("--sky-top", sky.top);
+    set("--sky-mid", sky.mid);
+    set("--sky-bot", sky.bot);
+    set("--ridge-far", sky.ridgeF);
+    set("--ridge-mid", sky.ridgeM);
+    set("--ridge-near", sky.ridgeN);
+    set("--hill", sky.hill);
+    set("--fg", sky.fg);
+    set("--distant", sky.distant);
+    set("--water", sky.water);
+    set("--water-deep", mix(sky.water, "#041820", 0.48));
+    set("--water-lite", mix(sky.water, "#ffffff", 0.4));
+    set("--glow", rgba(sky.glow, sky.glowA));
+    set("--fog", rgba(mix(sky.bot, "#ffffff", 0.55), 0.22 + (1 - sky.star) * 0.12));
+    starsEl.style.opacity = String(sky.star);
+    cloudsEl.style.opacity = String(sky.cloud);
+
+    const sun = sunArc(hourFloat);
+    const moon = moonArc(hourFloat);
+    set("--sun-x", sun.x + "%");
+    set("--sun-y", sun.y + "%");
+    set("--moon-x", moon.x + "%");
+    set("--moon-y", moon.y + "%");
+    set("--moon-glow", "rgba(214,224,255," + (0.38 * moon.opacity) + ")");
+    sunEl.style.left = sun.x + "%";
+    sunEl.style.top = sun.y + "%";
+    sunEl.style.opacity = String(sun.opacity);
+    const warm = clamp(1 - Math.max(0, sun.elevation), 0, 1);
+    sunEl.style.setProperty("--sun-core", mix("#fff6d2", "#ffc56a", warm * 0.7));
+    sunEl.style.setProperty("--sun-edge", mix("#ffe08a", "#ff5c1a", Math.pow(warm, 0.8)));
+    sunEl.style.setProperty("--sun-halo", rgba(mix("#ffe7a3", "#ff7a33", warm), 0.55));
+    moonEl.style.left = moon.x + "%";
+    moonEl.style.top = moon.y + "%";
+    moonEl.style.opacity = String(moon.opacity);
+    glintEl.style.left = sun.x + "%";
+    glintEl.style.opacity = String(Math.max(0, sun.elevation) * sun.opacity * 0.7);
+    document.body.className = phaseFor(hourFloat);
+  }
+
+  function buildStars() {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 86; i++) {
+      const star = document.createElement("i");
+      star.className = "star" + (i % 14 === 0 ? " bright" : "");
+      star.style.left = (Math.random() * 100) + "%";
+      star.style.top = (Math.random() * 50) + "%";
+      const size = i % 14 === 0 ? 2.8 : 1 + Math.random() * 1.35;
+      star.style.width = size + "px";
+      star.style.height = size + "px";
+      star.style.setProperty("--o", (0.4 + Math.random() * 0.6).toFixed(2));
+      star.style.animationDuration = (1.6 + Math.random() * 3.4) + "s";
+      star.style.animationDelay = (-Math.random() * 4) + "s";
+      frag.appendChild(star);
+    }
+    starsEl.appendChild(frag);
+  }
+
+  function buildDistant() {
+    const svg = document.getElementById("distant");
+    const ns = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(ns, "g");
+    g.setAttribute("fill", "var(--distant)");
+    for (let i = 0; i < 46; i++) {
+      const cx = (i / 45) * 1440 + ((i * 29) % 18 - 9);
+      const hgt = 34 + ((i * 17) % 48);
+      const base = 168 - Math.sin(i * 0.45) * 10;
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", [
+        "M" + cx + " " + (base - hgt) + " L" + (cx - 11) + " " + (base - hgt * 0.46) + " L" + (cx + 11) + " " + (base - hgt * 0.46) + " Z",
+        "M" + cx + " " + (base - hgt * 0.7) + " L" + (cx - 15) + " " + (base - hgt * 0.2) + " L" + (cx + 15) + " " + (base - hgt * 0.2) + " Z",
+        "M" + cx + " " + (base - hgt * 0.46) + " L" + (cx - 18) + " " + base + " L" + (cx + 18) + " " + base + " Z"
+      ].join(" "));
+      g.appendChild(path);
+    }
+    svg.appendChild(g);
+  }
+
+  function buildTufts() {
+    const root = document.getElementById("tufts");
+    for (let i = 0; i < 18; i++) {
+      const tuft = document.createElement("div");
+      tuft.className = "tuft";
+      tuft.style.left = (1.5 + i * 5.5 + (i % 3) * 0.4) + "%";
+      tuft.style.setProperty("--h", (14 + (i * 11) % 22) + "px");
+      tuft.style.setProperty("--lean", ((i % 2 ? -1 : 1) * (6 + (i % 4) * 3)) + "deg");
+      root.appendChild(tuft);
+    }
+  }
+
+  function computeSlots() {
+    const w = scene.clientWidth;
+    const h = scene.clientHeight;
+    const span = 76;
+    const gap = span / 11;
+    const slots = [];
+    for (let i = 0; i < 24; i++) {
+      const row = i < 12 ? 0 : 1;
+      const col = row === 0 ? i : i - 12;
+      const start = row === 0 ? 8 : 8 + gap * 0.5;
+      const jitter = ((i * 5) % 3 - 1) * 0.45;
+      const baseW = row === 0 ? Math.min(w * 0.078, h * 0.18) : Math.min(w * 0.098, h * 0.22);
+      const width = baseW * (0.9 + ((i * 3) % 5) * 0.035);
+      slots.push({
+        x: start + col * gap,
+        y: (row === 0 ? 63.2 : 70.2) + jitter,
+        width: width,
+        ratio: TREE_RATIO[i % 3]
+      });
+    }
+    return slots;
+  }
+
+  function positionTree(el, slot) {
+    el.style.left = slot.x + "%";
+    el.style.top = slot.y + "%";
+    el.style.width = slot.width + "px";
+    el.dataset.x = String(slot.x);
+    el.dataset.y = String(slot.y);
+    el.dataset.w = String(slot.width);
+    el.dataset.ratio = String(slot.ratio);
+  }
+
+  function createTree(i, slot, delay) {
+    const el = document.createElement("div");
+    el.className = "tree";
+    el.dataset.i = String(i);
+    el.style.animationDelay = delay + "s";
+    const pal = PALETTES[i % PALETTES.length];
+    el.style.setProperty("--c1", pal[0]);
+    el.style.setProperty("--c2", pal[1]);
+    el.style.setProperty("--c3", pal[2]);
+    el.style.setProperty("--c4", pal[3]);
+    el.style.setProperty("--lean", ((i % 2 ? -1 : 1) * (0.6 + (i % 4) * 0.45)) + "deg");
+    el.style.setProperty("--sway", (4.4 + (i % 5) * 0.7) + "s");
+    el.style.setProperty("--sway-delay", (-i * 0.37) + "s");
+    el.innerHTML = TREE_SVG[i % 3];
+    positionTree(el, slot);
+    return el;
+  }
+
+  function reconcileTrees(count) {
+    if (!scene.clientWidth) return;
+    const slots = computeSlots();
+    if (count === shownTrees && treeEls.size === count) return;
+    const first = shownTrees === -1;
+    for (let i = 0; i < 24; i++) {
+      const existing = treeEls.get(i);
+      if (i < count) {
+        if (!existing) {
+          const el = createTree(i, slots[i], first ? i * 0.05 : 0);
+          treesRoot.appendChild(el);
+          treeEls.set(i, el);
+        } else {
+          positionTree(existing, slots[i]);
+        }
+      } else if (existing) {
+        existing.classList.add("bye");
+        treeEls.delete(i);
+        (function (node) {
+          setTimeout(function () { node.remove(); }, 560);
+        })(existing);
+      }
+    }
+    shownTrees = count;
+  }
+
+  function renderSchools(minutes) {
+    schoolsRoot.innerHTML = "";
+    schoolState = [];
+    const sizes = [];
+    const full = Math.floor(minutes / 10);
+    const rem = minutes % 10;
+    for (let i = 0; i < full; i++) sizes.push(10);
+    if (rem) sizes.push(rem);
+    sizes.forEach(function (count, i) {
+      const school = document.createElement("div");
+      school.className = "school";
+      school.style.color = SCHOOL_COLORS[i % SCHOOL_COLORS.length];
+      school.setAttribute("role", "img");
+      school.setAttribute("aria-label", "School of " + count + " fish");
+      const inner = document.createElement("div");
+      inner.className = "school-inner";
+      let n = 0;
+      while (n < count) {
+        const row = document.createElement("div");
+        row.className = "fish-row";
+        const take = Math.min(5, count - n);
+        for (let k = 0; k < take; k++) {
+          const fish = document.createElement("div");
+          fish.className = "fish";
+          fish.style.animationDelay = (-n * 0.11) + "s";
+          fish.innerHTML = FISH;
+          row.appendChild(fish);
+          n++;
+        }
+        inner.appendChild(row);
+      }
+      school.appendChild(inner);
+      schoolsRoot.appendChild(school);
+      schoolState.push({ el: school, inner: inner, index: i, fishPx: 0 });
+    });
+  }
+
+  function reconcileFish(minutes) {
+    if (minutes === shownMinute) return;
+    shownMinute = minutes;
+    renderSchools(minutes);
+  }
+
+  function moveSchools(now) {
+    const total = schoolState.length;
+    const W = schoolsRoot.clientWidth;
+    const H = schoolsRoot.clientHeight;
+    if (!total || !W || !H) return;
+    const win = W / total;
+    for (let i = 0; i < total; i++) {
+      const s = schoolState[i];
+      const fishPx = Math.round(clamp((win - 16) / 5.15, 14, 36));
+      if (s.fishPx !== fishPx) {
+        s.fishPx = fishPx;
+        s.el.style.setProperty("--fish", fishPx + "px");
+      }
+      const sw = s.el.offsetWidth;
+      const sh = s.el.offsetHeight;
+      const pad = 6;
+      const travel = Math.max(0, win - sw - pad * 2);
+      const period = 12000 + i * 1700;
+      const phase = (now % (period * 2)) / period;
+      const goingRight = phase < 1;
+      const tri = goingRight ? phase : 2 - phase;
+      const x = i * win + pad + tri * travel;
+      const bob = Math.sin(now / 420 + i * 1.4) * 4;
+      const y = Math.max(0, (H - sh) / 2 + bob);
+      s.el.style.transform = "translate3d(" + x + "px," + y + "px,0)";
+      s.inner.classList.toggle("flip", !goingRight);
+    }
+  }
+
+  function canopyOf(tree) {
+    const sceneW = scene.clientWidth;
+    const sceneH = scene.clientHeight;
+    const x = parseFloat(tree.dataset.x);
+    const y = parseFloat(tree.dataset.y);
+    const w = parseFloat(tree.dataset.w);
+    const ratio = parseFloat(tree.dataset.ratio) || 1.35;
+    const height = w * ratio;
+    const top = (y / 100) * sceneH - height;
+    return {
+      x: ((x / 100) * sceneW + (Math.random() - 0.5) * w * 0.45) / sceneW * 100,
+      y: (top + height * 0.26) / sceneH * 100
+    };
+  }
+
+  function groundBand(n) {
+    const roll = n % 3;
+    if (roll === 0) return 89.5 + Math.random() * 7;
+    if (roll === 1) return 73.4 + Math.random() * 2.4;
+    return 61.5 + Math.random() * 4;
+  }
+
+  function placeLeaf(leaf) {
+    leaf.el.style.left = clamp(leaf.x, -3, 103) + "%";
+    leaf.el.style.top = leaf.y + "%";
+    leaf.el.style.transform = "rotate(" + leaf.rot + "deg)";
+  }
+
+  function spawnLeaf(settled) {
+    const count = treeEls.size;
+    const serial = leafSerial++;
+    const el = document.createElement("div");
+    el.className = "leaf";
+    el.innerHTML = LEAF_SVG[serial % LEAF_SVG.length];
+    const tree = count ? treeEls.get(serial % count) : null;
+    const pal = tree ? PALETTES[Number(tree.dataset.i) % PALETTES.length] : ["#e36414", "#bb3e03", "#ee9b00"];
+    el.style.color = pal[serial % pal.length];
+    el.style.width = (12 + (serial * 7) % 11) + "px";
+    el.style.zIndex = settled ? "1" : "2";
+    const leaf = {
+      el: el,
+      settled: settled,
+      x: 50,
+      y: 0,
+      originX: 50,
+      vy: 1.1 + Math.random() * 0.7,
+      rot: Math.random() * 360,
+      vr: (Math.random() < 0.5 ? -1 : 1) * (55 + Math.random() * 90),
+      age: 0,
+      wind: (Math.random() - 0.4) * 1.4,
+      ground: groundBand(serial),
+      phase: Math.random() * Math.PI * 2
+    };
+    if (settled) {
+      const baseX = tree ? parseFloat(tree.dataset.x) : Math.random() * 90 + 5;
+      leaf.x = clamp(baseX + (Math.random() - 0.5) * 12, 1, 98);
+      leaf.y = leaf.ground;
+      leaf.originX = leaf.x;
+    } else if (tree) {
+      const p = canopyOf(tree);
+      leaf.originX = p.x;
+      leaf.x = p.x;
+      leaf.y = p.y;
+    } else {
+      leaf.originX = 8 + Math.random() * 84;
+      leaf.x = leaf.originX;
+      leaf.y = 6 + Math.random() * 8;
+    }
+    leavesRoot.appendChild(el);
+    leaves.push(leaf);
+    placeLeaf(leaf);
+  }
+
+  function blowAway() {
+    const old = leaves.splice(0, leaves.length);
+    old.forEach(function (leaf) {
+      const t = leaf.el.style.transform || "rotate(0deg)";
+      leaf.el.animate([
+        { transform: t, opacity: 1 },
+        { transform: t + " translate(180px, -46px) rotate(50deg)", opacity: 0 }
+      ], { duration: 680, easing: "ease-in", fill: "forwards" });
+      setTimeout(function () { leaf.el.remove(); }, 700);
+    });
+  }
+
+  function reconcileLeaves(seconds) {
+    if (!treeEls.size && treeCountFor(getNow().getHours()) > 0 && scene.clientWidth) return;
+    if (seconds === leaves.length) return;
+    if (seconds < leaves.length) blowAway();
+    const need = seconds - leaves.length;
+    if (need <= 0) return;
+    const settled = need > 1;
+    for (let i = 0; i < need; i++) spawnLeaf(settled);
+  }
+
+  function updateLeaves(dt) {
+    for (let i = 0; i < leaves.length; i++) {
+      const leaf = leaves[i];
+      if (leaf.settled) continue;
+      leaf.age += dt;
+      leaf.vy += 6.2 * dt;
+      leaf.y += leaf.vy * dt;
+      leaf.originX += leaf.wind * dt;
+      leaf.x = leaf.originX + Math.sin(leaf.age * 2.3 + leaf.phase) * 1.7;
+      leaf.rot += leaf.vr * dt;
+      if (leaf.y >= leaf.ground) {
+        leaf.y = leaf.ground;
+        leaf.x = clamp(leaf.x, 1, 98);
+        leaf.settled = true;
+        leaf.el.style.zIndex = "1";
+      }
+      placeLeaf(leaf);
+    }
+  }
+
+  function fishPhrase(minutes) {
+    if (minutes === 0) return "Still water for the new minute";
+    const full = Math.floor(minutes / 10);
+    const rem = minutes % 10;
+    if (rem === 0) return full + (full === 1 ? " school of ten fish" : " schools of ten fish");
+    if (full === 0) return rem + (rem === 1 ? " fish, a school just starting" : " fish, a school still gathering");
+    return full + " × 10 fish, plus " + rem;
+  }
+
+  function updateReadout(date) {
+    const h = date.getHours();
+    const m = date.getMinutes();
+    const s = date.getSeconds();
+    const trees = treeCountFor(h);
+    const hh = String(h).padStart(2, "0");
+    const mm = String(m).padStart(2, "0");
+    const ss = String(s).padStart(2, "0");
+    timeEl.textContent = hh + ":" + mm + ":" + ss;
+    dateEl.textContent = date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric"
+    });
+    hourLine.textContent = h === 0
+      ? "24 trees — midnight, the full grove"
+      : trees + (trees === 1 ? " tree for the hour" : " trees for the hour");
+    minuteLine.textContent = fishPhrase(m);
+    secondLine.textContent = s === 0
+      ? "No leaves this minute"
+      : s === 1 ? "1 leaf falling" : s + " leaves this minute";
+    document.title = hh + ":" + mm + ":" + ss + " · Display Time";
+  }
+
+  buildStars();
+  buildDistant();
+  buildTufts();
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - lastFrame) / 1000);
+    lastFrame = now;
+    const date = getNow();
+    const hourFloat = date.getHours() + (date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() / 1000) / 3600;
+    applySky(hourFloat);
+    if (scene.clientWidth) {
+      updateReadout(date);
+      reconcileTrees(treeCountFor(date.getHours()));
+      reconcileFish(date.getMinutes());
+      reconcileLeaves(date.getSeconds());
+      moveSchools(now);
+      updateLeaves(dt);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  new ResizeObserver(function () {
+    if (!scene.clientWidth) return;
+    const slots = computeSlots();
+    treeEls.forEach(function (el, i) { positionTree(el, slots[i]); });
+  }).observe(scene);
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
